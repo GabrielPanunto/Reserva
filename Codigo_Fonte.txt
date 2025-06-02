@@ -1,0 +1,263 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
+class Program
+{
+    static List<Usuario> usuarios = new List<Usuario>();
+    static List<Cliente> clientes = new List<Cliente>();
+    static List<Produto> produtos = new List<Produto>();
+    static List<Venda> vendas = new List<Venda>();
+
+    static void Main(string[] args)
+    {
+        usuarios.Add(new Usuario { Nome = "estoquista", Senha = "123", Perfil = "estoquista" });
+        usuarios.Add(new Usuario { Nome = "atendente", Senha = "123", Perfil = "atendente" });
+        usuarios.Add(new Usuario { Nome = "supervisor", Senha = "123", Perfil = "supervisor" });
+
+        while (true)
+        {
+            Console.WriteLine("\nSistema de Controle de Vendas");
+            Console.WriteLine("1. Login");
+            Console.WriteLine("2. Finalizar Programa");
+            Console.Write("Escolha uma opção: ");
+            string escolha = Console.ReadLine();
+
+            if (escolha == "2") break;
+
+            Console.Write("Usuário: ");
+            string nome = Console.ReadLine();
+            Console.Write("Senha: ");
+            string senha = Console.ReadLine();
+
+            var usuario = usuarios.FirstOrDefault(u => u.Nome == nome && u.Senha == senha);
+
+            if (usuario == null)
+            {
+                Console.WriteLine("Usuário ou senha inválidos!");
+                continue;
+            }
+
+            Console.WriteLine($"Bem-vindo, {usuario.Nome}! Perfil: {usuario.Perfil}");
+
+            switch (usuario.Perfil)
+            {
+                case "estoquista": MenuEstoquista(); break;
+                case "atendente": MenuAtendente(); break;
+                case "supervisor": MenuSupervisor(); break;
+            }
+        }
+
+        Console.WriteLine("Programa finalizado.");
+    }
+
+    static void MenuEstoquista()
+    {
+        int opcao;
+        do
+        {
+            Console.WriteLine("\n1. Cadastrar Produto\n2. Listar Produtos\n0. Sair do Usuário");
+            opcao = int.Parse(Console.ReadLine());
+            switch (opcao)
+            {
+                case 1: CadastrarProduto(); break;
+                case 2: ListarProdutos(); break;
+            }
+        } while (opcao != 0);
+    }
+
+    static void MenuAtendente()
+    {
+        int opcao;
+        do
+        {
+            Console.WriteLine("\n1. Cadastrar Cliente\n2. Realizar Venda\n0. Sair do Usuário");
+            opcao = int.Parse(Console.ReadLine());
+            switch (opcao)
+            {
+                case 1: CadastrarCliente(); break;
+                case 2: RealizarVenda(); break;
+            }
+        } while (opcao != 0);
+    }
+
+    static void MenuSupervisor()
+    {
+        int opcao;
+        do
+        {
+            Console.WriteLine("\n1. Listar Vendas\n2. Listar Produtos\n3. Listar Clientes\n0. Sair do Usuário");
+            opcao = int.Parse(Console.ReadLine());
+            switch (opcao)
+            {
+                case 1: ListarVendas(); break;
+                case 2: ListarProdutos(); break;
+                case 3: ListarClientes(); break;
+            }
+        } while (opcao != 0);
+    }
+
+    static void CadastrarProduto()
+    {
+        Produto p = new Produto();
+        Console.Write("Nome do Produto: ");
+        p.Nome = Console.ReadLine();
+        Console.Write("Valor: ");
+        p.Valor = decimal.Parse(Console.ReadLine());
+        Console.Write("Quantidade em Estoque: ");
+        p.QuantidadeEstoque = int.Parse(Console.ReadLine());
+        produtos.Add(p);
+        Console.WriteLine("Produto cadastrado com sucesso!");
+    }
+
+    static void ListarProdutos()
+    {
+        Console.WriteLine("\n--- Lista de Produtos ---");
+        foreach (var p in produtos)
+        {
+            Console.WriteLine($"{p.Nome} | R$ {p.Valor:F2} | Estoque: {p.QuantidadeEstoque}");
+        }
+    }
+
+    static void CadastrarCliente()
+    {
+        Cliente c = new Cliente();
+        Console.Write("Código: ");
+        c.Codigo = Console.ReadLine();
+        Console.Write("Nome: ");
+        c.Nome = Console.ReadLine();
+        Console.Write("CPF: ");
+        c.CPF = Console.ReadLine();
+        Console.Write("Telefone: ");
+        c.Telefone = Console.ReadLine();
+        Console.Write("E-mail: ");
+        c.Email = Console.ReadLine();
+        Console.Write("Endereço: ");
+        c.Endereco = Console.ReadLine();
+
+        clientes.Add(c);
+        Console.WriteLine("Cliente cadastrado com sucesso!");
+    }
+
+    static void ListarClientes()
+    {
+        Console.WriteLine("\n--- Lista de Clientes ---");
+        foreach (var c in clientes)
+        {
+            Console.WriteLine($"Código: {c.Codigo} | Nome: {c.Nome} | CPF: {c.CPF}");
+            Console.WriteLine($"Telefone: {c.Telefone} | E-mail: {c.Email}");
+            Console.WriteLine($"Endereço: {c.Endereco}");
+            Console.WriteLine("------------------------------");
+        }
+    }
+
+    static void RealizarVenda()
+    {
+        Venda v = new Venda();
+        v.CodigoVenda = Guid.NewGuid().ToString().Substring(0, 8);
+
+        Console.Write("Código do Cliente: ");
+        string codCliente = Console.ReadLine();
+        v.Cliente = clientes.FirstOrDefault(c => c.Codigo == codCliente);
+
+        if (v.Cliente == null)
+        {
+            Console.WriteLine("Cliente não encontrado.");
+            return;
+        }
+
+        Console.WriteLine($"\nCliente: {v.Cliente.Nome} (CPF: {v.Cliente.CPF})");
+        Console.WriteLine("Adicione os produtos à venda. Digite o nome de um produto existente.");
+        Console.WriteLine("Digite 'fim' para concluir a seleção.\n");
+
+        while (true)
+        {
+            Console.Write("Nome do produto: ");
+            string nomeProduto = Console.ReadLine();
+
+            if (nomeProduto.Trim().ToLower() == "fim") break;
+
+            Produto prod = produtos.FirstOrDefault(p => p.Nome.Equals(nomeProduto, StringComparison.OrdinalIgnoreCase));
+
+            if (prod != null && prod.QuantidadeEstoque > 0)
+            {
+                v.Itens.Add(prod);
+                v.ValorTotal += prod.Valor;
+                prod.QuantidadeEstoque--;
+
+                Console.WriteLine($"Produto '{prod.Nome}' adicionado por R$ {prod.Valor:F2}.");
+            }
+            else
+            {
+                Console.WriteLine("Produto não encontrado ou sem estoque.");
+            }
+        }
+
+        if (v.Itens.Count == 0)
+        {
+            Console.WriteLine("Nenhum produto foi adicionado à venda.");
+            return;
+        }
+
+        Console.Write("\nForma de pagamento (dinheiro/cartão): ");
+        v.FormaPagamento = Console.ReadLine();
+        v.StatusPagamento = "Pago";
+
+        vendas.Add(v);
+
+        Console.WriteLine("\n--- RESUMO DA VENDA ---");
+        Console.WriteLine($"Cliente: {v.Cliente.Nome} - CPF: {v.Cliente.CPF}");
+        Console.WriteLine("Itens comprados:");
+        foreach (var item in v.Itens)
+        {
+            Console.WriteLine($"- {item.Nome} | R$ {item.Valor:F2}");
+        }
+        Console.WriteLine($"Total da Venda: R$ {v.ValorTotal:F2}");
+        Console.WriteLine($"Forma de Pagamento: {v.FormaPagamento}");
+        Console.WriteLine("Status do Pagamento: Pago");
+        Console.WriteLine("-------------------------");
+    }
+
+    static void ListarVendas()
+    {
+        Console.WriteLine("\n--- Lista de Vendas ---");
+        foreach (var v in vendas)
+        {
+            Console.WriteLine($"Código: {v.CodigoVenda} | Cliente: {v.Cliente.Nome} | Total: R$ {v.ValorTotal:F2} | Pagamento: {v.FormaPagamento}");
+        }
+    }
+}
+
+class Usuario
+{
+    public string Nome { get; set; }
+    public string Senha { get; set; }
+    public string Perfil { get; set; }
+}
+
+class Cliente
+{
+    public string Codigo { get; set; }
+    public string Nome { get; set; }
+    public string CPF { get; set; }
+    public string Telefone { get; set; }
+    public string Email { get; set; }
+    public string Endereco { get; set; }
+}
+
+class Produto
+{
+    public string Nome { get; set; }
+    public decimal Valor { get; set; }
+    public int QuantidadeEstoque { get; set; }
+}
+
+class Venda
+{
+    public string CodigoVenda { get; set; }
+    public Cliente Cliente { get; set; }
+    public List<Produto> Itens { get; set; } = new List<Produto>();
+    public decimal ValorTotal { get; set; }
+    public string FormaPagamento { get; set; }
+    public string StatusPagamento { get; set; }
+}
